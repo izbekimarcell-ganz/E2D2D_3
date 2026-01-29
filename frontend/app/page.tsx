@@ -9,6 +9,7 @@ export default function Home(){
   const [kaloria, setCalories] = useState(' ')
   const [ar, setPrice] = useState(' ')
   const [cakes, setCakes] = useState<Cake[]>([]) //Tömb
+  const [editId, setEditId] = useState<number | null>(null)
 
   async function loadCakes() {                                          //rakattintuk a suti betoltesre ez aktiválódik
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/cakes`) //ez a valtozo tartalmazza h h lehet elerni
@@ -27,10 +28,48 @@ export default function Home(){
         ar: Number(ar)
       })
      }) 
-    setName(' ')                                                          //vegen uritse ki
+    resetForm()
+    loadCakes()                                                          //ujratolti a sutiket
+  }
+
+  async function updateCake(id: number) {
+    if (editId === null) return
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/cakes/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nev,
+        kaloria: Number(kaloria),
+        ar: Number(ar)
+      })
+    })
+
+    resetForm(),
+    loadCakes()
+  }
+
+  async function deleteCake(id: number) {
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/cakes/${id}`, {
+      method: 'DELETE'
+    })
+
+    loadCakes()
+  }
+
+  function startEdit(cake: Cake){
+    setEditId(null)
+    setName(cake.nev)
+    setCalories(String(cake.kaloria))
+    setPrice(String(cake.ar))
+  }
+
+  function resetForm(){
+    setEditId(null)
+    setName(' ')
     setCalories(' ')
     setPrice(' ')
   }
+
   return(
     <div className={styles.container}>
       <h1>🧁Sütemény bolt🧁</h1>
@@ -49,6 +88,16 @@ export default function Home(){
       value={ar}
       onChange={(e)=>setPrice(e.target.value)}
       />
+
+    (editId == null) ? (
+
+    ) : (
+      <button onClick={updateCake}>Mentés</button>
+      <button onClick={resetForm}>Mégse</button>
+    )
+    
+
+
      <button onClick={addCake}>💅Küldés💅</button>
      <button onClick={loadCakes}>Lekérdezés🌷</button>
      <div className={styles.list}>
@@ -57,6 +106,9 @@ export default function Home(){
           <strong>🎂{cake.nev}🎂</strong>
           <div>Kalória: {cake.kaloria}</div>
           <div>Ár: {cake.ar}</div>
+
+          <button onClick={()=>startEdit(cake)}>✏️Szerkesztés✏️</button>
+          <button onClick={()=>deleteCake(cake.id)}>🗑️Törlés🗑️</button>
         </div>
       ))}
      </div>
